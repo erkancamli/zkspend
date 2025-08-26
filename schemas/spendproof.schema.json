@@ -1,0 +1,4 @@
+{
+  "name": "zkSpendProof",
+  "schema": "bytes32 receiptCommitment, bytes32 nullifier, uint256 minAmount, uint64 startTime, uint64 endTime, bytes32 merchantRoot, address claimer"
+}

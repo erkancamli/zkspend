@@ -1,0 +1,24 @@
+# Python
+*.pyc
+__pycache__/
+.venv/
+
+# Foundry/solidity build çıktıları
+out/
+cache/
+broadcast/
+
+# Sırlar
+scripts/env.local
+*.env
+*.pem
+*.key
+
+# Opsiyonel: gerçek fiş görsellerini push etme
+receipts/*.png
+receipts/*.jpg
+receipts/*.jpeg
+
+# Sistem/editor
+.DS_Store
+.vscode/
