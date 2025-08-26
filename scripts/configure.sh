@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 REPO_DIR="${REPO_DIR:-$HOME/zkspend}"
 cd "$REPO_DIR" >/dev/null
 
@@ -12,11 +11,11 @@ read -srp "Private key (hex, no 0x): " pk; echo
 
 out="scripts/env.local"
 {
-  printf 'export ETH_' ; printf 'RPC_URL="%s"\n' "$rpc"
-  printf 'export RPC' ; printf '_URL="%s"\n' "$rpc"
+  printf 'export ETH_RPC_URL="%s"\n' "$rpc"
+  printf 'export RPC_URL="%s"\n' "$rpc"
   printf 'export FROM="%s"\n' "$from"
   printf 'export CAMPAIGN="%s"\n' "$campaign"
-  printf 'export ' ; printf 'PRIVATE' ; printf '_KEY="%s"\n' "$pk"
+  printf 'export PRIVATE_KEY="%s"\n' "$pk"
 } > "$out"
 
 chmod 600 "$out"

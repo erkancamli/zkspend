@@ -1,3 +1,14 @@
+## Quick Start
+
+```bash
+# 1) Bootstrap (Foundry + Python venv)
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/erkancamli/zkspend/main/scripts/bootstrap.sh)"
+
+# 2) Configure env (creates scripts/env.local interactively)
+~/zkspend/scripts/configure.sh
+
+# 3) One-click claim (example)
+~/zkspend/scripts/claim_once.sh ~/zkspend/receipts/receipt_3.png
 [![CI](https://github.com/erkancamli/zkspend/actions/workflows/ci.yml/badge.svg)](https://github.com/erkancamli/zkspend/actions)
 
 # zkSpend – Private Receipt → On-Chain Reward (0G Galileo Testnet)
