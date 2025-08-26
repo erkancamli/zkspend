@@ -1,70 +1,48 @@
-## Quick Start
+# zkSpend – Private Receipt → On-Chain Reward (0G Galileo)
 
+Turn receipts into on-chain rewards — **privately** — on 0G (Galileo). Foundry contracts + local Python worker. **No PII.**
+
+## Quick Start
 ```bash
 # 1) Bootstrap (Foundry + Python venv)
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/erkancamli/zkspend/main/scripts/bootstrap.sh)"
 
-# 2) Configure env (creates scripts/env.local interactively)
+# 2) Configure env (creates scripts/env.local)
 ~/zkspend/scripts/configure.sh
 
 # 3) One-click claim (example)
 ~/zkspend/scripts/claim_once.sh ~/zkspend/receipts/receipt_3.png
-[![CI](https://github.com/erkancamli/zkspend/actions/workflows/ci.yml/badge.svg)](https://github.com/erkancamli/zkspend/actions)
+Live TX viewer: https://erkancamli.github.io/zkspend/tx.html?tx=
+<TX_HASH>
 
-# zkSpend – Private Receipt → On-Chain Reward (0G Galileo Testnet)
+Live Contracts (0G Galileo)
 
-## Canlı Adresler
-- **Factory:** `0x8712b078774df0988bC89f7939154E0D72fCf6f2`
-- **Campaign (0.1 ETH ödül):** `0x8bbac06bd634f12250079fd1470c2016157f6bd8`
-- **Campaign (0.002 ETH ödül):** `0xd35116e3984b9e7564079750ab726aa4c1d7e77d`
+Factory: 0x8712b078774df0988bC89f7939154E0D72fCf6f2
 
-## Örnek İşlemler
-- **Büyük claim:** `0x7dbec97a84a4b5e624585374d9233fe08b26de3212bb53bfbc46850b2dc8c79e`
-- **Küçük claim 1:** `0x9c0f423899a4887117f7aa0bed0c96da94f698cc12a7f885a318d1762f470ea2`
-- **Küçük claim 2:** `0x8dd2514a09212e2f73fe3dd2289bb2cbdca1002151604259f3761268fc8941ca`
+Campaign (default, 0.002 ETH reward): 0xd35116e3984b9e7564079750ab726aa4c1d7e77d
 
-## Hızlı Demo
-```bash
-# Ortam
-source ~/zkspend/scripts/env.local
-export CAMPAIGN=0xd35116e3984b9e7564079750ab726aa4c1d7e77d
-export FROM=0x63798AD4eb791a8247Bb522bCE38062E41F7CE26
+Campaign (0.1 ETH reward): 0x8bbac06bd634f12250079fd1470c2016157f6bd8
 
-# Tek tık claim
-~/zkspend/scripts/claim_once.sh ~/zkspend/receipts/receipt_3.png
+Example TXs
 
-# Doğrulama
-cast balance $CAMPAIGN
-cast receipt 0x8dd2514a09212e2f73fe3dd2289bb2cbdca1002151604259f3761268fc8941ca --json | jq .
-```
+0x9c0f423899a4887117f7aa0bed0c96da94f698cc12a7f885a318d1762f470ea2
 
-## Ne Gösteriyoruz?
-- Fişten PII sızdırmadan **koşul sağlandı** kanıtı (ZK mimari).
-- **Otomatik ödül** transferi (kontrat öder).
-- **Double-spend** koruması (aynı nullifier → `spent`).
+0x8dd2514a09212e2f73fe3dd2289bb2cbdca1002151604259f3761268fc8941ca
 
-## Kurulum (lokalde)
-```bash
-# Foundry
-curl -L https://foundry.paradigm.xyz | bash
-foundryup
+How it works
 
-# Kontratlar
-cd contracts
-forge install
-forge build
+Local worker (Python): receipt + salt → RC (receiptCommitment), NUL (nullifier), PUB (publicInputHash).
 
-# Worker
-cd ../worker
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+Contract: checks NUL (spent?), transfers reward, emits Claimed(RC,NUL).
 
-## Pitch (1 dakikalık özet)
-- **Problem:** Mağaza fişleri, kişisel veriyi sızdırmadan Web3 ödüllerine dönüştürülemiyor.
-- **Çözüm:** zkSpend, fişi (lokalde) işler → ZK-benzeri özetler (RC/NUL/PUB) üretir → kontrat koşulu sağlanırsa **otomatik ödül** öder.
-- **Gizlilik:** Fiş içeriği zincire veya üçüncü tarafa gönderilmez; yalnızca taahhütler ve nullifier on-chain.
-- **Kullanım:** Kampanya → fonla → `claim_once.sh` ile fişten ödül al.
-- **Anti-abuse:** Aynı nullifier tekrar kullanılırsa kontrat `spent` ile revert.
-- **Durum:** 0G Galileo üzerinde canlı; adresler ve örnek işlemler README’de.
-- **Gelecek:** Tarayıcı içi worker (WASM), çoklu kampanya kuralları (tarih/toplam tutar/mağaza), gerçek ZKP entegrasyonu.
+Privacy: the receipt content never leaves the user’s machine.
 
+Scripts
+
+scripts/claim_once.sh – one-click claim (new salt each run)
+
+scripts/create_campaign.sh – deploy new campaign
+
+scripts/fund_campaign.sh – fund a campaign
+
+⚠️ Testnet only. Don’t commit secrets. scripts/env.local is git-ignored.
