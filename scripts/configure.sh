@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
-REPO_DIR="${REPO_DIR:-$HOME/zkspend}"
-cd "$REPO_DIR" >/dev/null
 
-echo "› zkSpend configure"
-read -rp "RPC URL (0G Galileo): " rpc
-read -rp "Your EVM address (FROM 0x...): " from
-read -rp "Campaign address (0x...): " campaign
-read -srp "Private key (hex, no 0x): " pk; echo
+echo ">>> zkSpend configure (creates scripts/env.local)"
 
-out="scripts/env.local"
-{
-  printf 'export ETH_RPC_URL="%s"\n' "$rpc"
-  printf 'export RPC_URL="%s"\n' "$rpc"
-  printf 'export FROM="%s"\n' "$from"
-  printf 'export CAMPAIGN="%s"\n' "$campaign"
-  printf 'export PRIVATE_KEY="%s"\n' "$pk"
-} > "$out"
+read -rp "RPC_URL (e.g. https://evmrpc-testnet.0g.ai or your QuickNode): " RPC_URL
+read -rp "PRIVATE_KEY (0x...): " PRIVATE_KEY
+read -rp "FROM address (0x...): " FROM
+read -rp "CAMPAIGN address (0x...): " CAMPAIGN
 
-chmod 600 "$out"
-echo "✓ Wrote $out"
-echo "Next: $REPO_DIR/scripts/claim_once.sh receipts/receipt_3.png"
+mkdir -p scripts
+cat > scripts/env.local <<ENV
+# zkSpend local config (gitignored)
+export RPC_URL="${RPC_URL}"
+export ETH_RPC_URL="${RPC_URL}"
+export PRIVATE_KEY="${PRIVATE_KEY}"
+export FROM="${FROM}"
+export CAMPAIGN="${CAMPAIGN}"
+ENV
+
+chmod 600 scripts/env.local
+echo "✓ scripts/env.local written."
+echo "test: cast chain-id --rpc-url \"\$RPC_URL\""
