@@ -22,3 +22,4 @@ receipts/*.jpeg
 # Sistem/editor
 .DS_Store
 .vscode/
+receipt_*.png
