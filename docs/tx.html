@@ -1,0 +1,30 @@
+<!doctype html><meta charset="utf-8">
+<title>zkspend · tx viewer</title>
+<h1>Tx Receipt</h1>
+<label>RPC: <input id="rpc" size="90"></label><br>
+<label>Tx:  <input id="tx"  size="90"></label>
+<button id="go">Load</button>
+<pre id="out"></pre>
+<script>
+  const qs = new URLSearchParams(location.search);
+  const defaultRpc = qs.get('rpc') || 'https://evmrpc-testnet.0g.ai';
+  const defaultTx  = qs.get('tx')  || '';
+  rpc.value = defaultRpc; tx.value = defaultTx;
+
+  async function rpcCall(method, params){
+    const r = await fetch(rpc.value, {
+      method: 'POST', headers: {'content-type':'application/json'},
+      body: JSON.stringify({jsonrpc:'2.0', id:1, method, params})
+    });
+    return r.json();
+  }
+  async function load(){
+    out.textContent = 'Loading...';
+    try {
+      const res = await rpcCall('eth_getTransactionReceipt', [tx.value]);
+      out.textContent = JSON.stringify(res, null, 2);
+    } catch(e){ out.textContent = String(e); }
+  }
+  go.onclick = load;
+  if (tx.value) load();
+</script>
