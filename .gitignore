@@ -3,23 +3,27 @@
 __pycache__/
 .venv/
 
-# Foundry/solidity build çıktıları
+# Foundry / Solidity
 out/
 cache/
 broadcast/
 
-# Sırlar
+# Secrets
 scripts/env.local
 *.env
 *.pem
 *.key
+*.secret
 
-# Opsiyonel: gerçek fiş görsellerini push etme
-receipts/*.png
-receipts/*.jpg
-receipts/*.jpeg
+# Receipts & local assets
+receipts/
+receipt_*.png
+receipt_*.jpg
+receipt_*.jpeg
 
-# Sistem/editor
+# Archives
+*.zip
+
+# Editor / OS
 .DS_Store
 .vscode/
-receipt_*.png
