@@ -16,12 +16,14 @@
   pre{background:#0b1320;color:#cbd5e1;padding:14px;border-radius:12px;overflow:auto}
   ul{margin:6px 0 14px}
   li{margin:4px 0}
+  .lock{font-size:12px;padding:4px 6px;border-radius:6px;background:#eef2ff;border:1px solid #c7d2fe}
 </style>
 
 <h1>Tx Receipt</h1>
 <header>
   <span class="mut">RPC:</span>
-  <input id="rpc" placeholder="https://evmrpc-testnet.0g.ai (boş bırakıp URL ile de verebilirsin)">
+  <input id="rpc" readonly>
+  <span class="lock" title="RPC sabit. İstersen URL'e ?rpc= yazıp geçici override edebilirsin.">locked</span>
   <span class="mut">Tx:</span>
   <input id="tx" placeholder="0x...">
   <button id="load">Load</button>
@@ -31,11 +33,15 @@
 <pre id="json"></pre>
 
 <script>
+/* ---- RPC sabitleme ---- */
+const DEFAULT_RPC = 'https://evmrpc-testnet.0g.ai'; // public 0G Galileo RPC
+// İstersen sadece kendi tarayıcında geçici override: URL'e ?rpc=<url> ekle
 const params = new URLSearchParams(location.search);
-const $rpc = document.getElementById('rpc');
+let rpcUrl = params.get('rpc') || DEFAULT_RPC;
+document.getElementById('rpc').value = rpcUrl;
+
 const $tx  = document.getElementById('tx');
-$rpc.value = params.get('rpc') || '';
-$tx.value  = params.get('tx')  || '';
+$tx.value  = params.get('tx') || '';
 
 const CLAIMED_SIG = '0xcbcb845d94d59960a0c6e8b3a1f47ad81bb57269de43e89ff4f0fa656246f5f6';
 
@@ -45,7 +51,7 @@ function gwei(n){ return Number(n)/1e9; }
 function weiToEth(w){ return Number(w)/1e18; }
 
 async function call(method, args){
-  const r = await fetch($rpc.value, {
+  const r = await fetch(rpcUrl, {
     method:'POST',
     headers:{'content-type':'application/json'},
     body: JSON.stringify({jsonrpc:'2.0', id:1, method, params: args})
@@ -57,8 +63,10 @@ async function call(method, args){
 
 async function load(){
   try{
-    document.getElementById('summary').textContent = 'Yükleniyor...';
+    const summary = document.getElementById('summary');
+    summary.textContent = 'Yükleniyor...';
     const txHash  = $tx.value.trim();
+    if(!txHash){ summary.textContent = 'Tx gir.'; return; }
 
     const [rcpt, tx] = await Promise.all([
       call('eth_getTransactionReceipt',[txHash]),
@@ -74,6 +82,7 @@ async function load(){
     let html = `
       <h3>${rcpt.status==='0x1' ? '✅ Success' : '❌ Failed'}</h3>
       <ul>
+        <li>RPC: <code>${rpcUrl}</code></li>
         <li>Block: <b>${hexToNum(rcpt.blockNumber)}</b> <span class="mut">(${when})</span></li>
         <li>From: <code>${tx.from}</code></li>
         <li>To: <code>${rcpt.to || '(contract creation)'}</code></li>
@@ -97,13 +106,12 @@ async function load(){
       html += `<p class="mut">Claimed logu yok.</p>`;
     }
 
-    document.getElementById('summary').innerHTML = html;
+    summary.innerHTML = html;
     document.getElementById('json').textContent  = JSON.stringify({receipt: rcpt, tx, block}, null, 2);
 
-    // URL'e yaz (paylaşılabilir link)
     const u = new URL(location);
     u.searchParams.set('tx', txHash);
-    if ($rpc.value) u.searchParams.set('rpc', $rpc.value);
+    if (params.get('rpc')) u.searchParams.set('rpc', rpcUrl); // sadece override varsa yaz
     history.replaceState(null,'',u);
   } catch(e){
     document.getElementById('summary').innerHTML = `<b>Hata:</b> ${e.message}`;
@@ -111,6 +119,6 @@ async function load(){
 }
 
 document.getElementById('load').onclick = (ev)=>{ ev.preventDefault(); load(); };
-if ($tx.value && $rpc.value) load();
+if ($tx.value) load();
 </script>
 </html>
