@@ -1,3 +1,5 @@
+[![CI](https://github.com/erkancamli/zkspend/actions/workflows/ci.yml/badge.svg)](https://github.com/erkancamli/zkspend/actions)
+
 # zkSpend – Private Receipt → On-Chain Reward (0G Galileo Testnet)
 
 ## Canlı Adresler
@@ -29,3 +31,29 @@ cast receipt 0x8dd2514a09212e2f73fe3dd2289bb2cbdca1002151604259f3761268fc8941ca 
 - Fişten PII sızdırmadan **koşul sağlandı** kanıtı (ZK mimari).
 - **Otomatik ödül** transferi (kontrat öder).
 - **Double-spend** koruması (aynı nullifier → `spent`).
+
+## Kurulum (lokalde)
+```bash
+# Foundry
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+
+# Kontratlar
+cd contracts
+forge install
+forge build
+
+# Worker
+cd ../worker
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+## Pitch (1 dakikalık özet)
+- **Problem:** Mağaza fişleri, kişisel veriyi sızdırmadan Web3 ödüllerine dönüştürülemiyor.
+- **Çözüm:** zkSpend, fişi (lokalde) işler → ZK-benzeri özetler (RC/NUL/PUB) üretir → kontrat koşulu sağlanırsa **otomatik ödül** öder.
+- **Gizlilik:** Fiş içeriği zincire veya üçüncü tarafa gönderilmez; yalnızca taahhütler ve nullifier on-chain.
+- **Kullanım:** Kampanya → fonla → `claim_once.sh` ile fişten ödül al.
+- **Anti-abuse:** Aynı nullifier tekrar kullanılırsa kontrat `spent` ile revert.
+- **Durum:** 0G Galileo üzerinde canlı; adresler ve örnek işlemler README’de.
+- **Gelecek:** Tarayıcı içi worker (WASM), çoklu kampanya kuralları (tarih/toplam tutar/mağaza), gerçek ZKP entegrasyonu.
+
