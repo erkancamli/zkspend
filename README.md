@@ -16,3 +16,6 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/erkancamli/zkspend/main/
 
 # 3) One-click claim (example)
 ~/zkspend/scripts/claim_once.sh ~/zkspend/receipts/receipt_3.png
+
+## Latest Demo TX
+- `0x19d3c1c937f99a38141cce94f02632cfbbfaaab741bea8e631f21e8467594f99`
