@@ -1,0 +1,14 @@
+{
+  "ts": "20250914T201446Z",
+  "tx": "0x33481a389519fded07bd909c96686abdac5016db7b5042bd45509c267490c0dc",
+  "rc": "0x4c46ac9d9605f84e7ebba622c9c1028954c60abc921523b03de3d19fcb8b8b83",
+  "nul": "0xa3e1f883a81da5185893d4f2edaf05069f325d9aee3827aea024c026e2d46a61",
+  "pub": "0x916d1ddb1e713eddf26fda30b25fbfe0c7045609846958e5e15c0a69c4f26c3e",
+  "proof": "0x",
+  "campaign": "0xd35116e3984b9e7564079750ab726aa4c1d7e77d",
+  "from": "0x63798AD4eb791a8247Bb522bCE38062E41F7CE26",
+  "storage": {
+    "cid": "sha256:9c80ef5383d252ab3a2dc790188c0763ce822ed2b30a362d6e85ac1129b17c8f",
+    "url": null
+  }
+}
