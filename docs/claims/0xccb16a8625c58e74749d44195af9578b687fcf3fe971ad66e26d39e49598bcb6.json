@@ -1,0 +1,10 @@
+{
+  "tx": "0xccb16a8625c58e74749d44195af9578b687fcf3fe971ad66e26d39e49598bcb6",
+  "receiptCommitment": "0xde540109249512db58ed123af7cb18f5c52c98ad72d6f15276e59c98da94ef3c",
+  "nullifier": "0x1d683748dec6ed02fbe88f040ba023220fb3ec9a41582680dddc3704fb26960f",
+  "publicInputHash": "0xdeb767e07a2cc6fa43700bd817d225c3b55fb3a8f27c7567073b914450bef05e",
+  "from": "0x63798AD4eb791a8247Bb522bCE38062E41F7CE26",
+  "contract": "0xd35116e3984b9e7564079750ab726aa4c1d7e77d",
+  "chainId": 16601,
+  "time": "2025-09-14T19:36:48Z"
+}
