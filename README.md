@@ -88,3 +88,8 @@ MIT
 Public proof artifacts are published under GitHub Pages:  
 `https://erkancamli.github.io/zkspend/claims/<FILE>.json`
 
+
+### Storage Roadmap
+- **v0.1:** Public JSON artifacts (GitHub Pages under `docs/claims/`)
+- **v0.2:** Push artifacts to **0G Storage** (CLI/SDK), keep CID/hash in claim record *(stubbed now: see `scripts/uploader_0g_stub.sh`)*  
+- **v0.3:** ZK verifier emits storage pointer; end-to-end verifiable proof trail
