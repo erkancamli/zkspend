@@ -1,69 +1,42 @@
 <!doctype html>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>zkSpend · Live Claims (0G Galileo)</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>zkSpend · Live Claims</title>
 <style>
-  :root{--fg:#0b1020;--mut:#6b7280;--ok:#16a34a;--bg:#f8fafc;--card:#fff}
-  body{font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;background:var(--bg);color:var(--fg);margin:0}
-  header{max-width:980px;margin:24px auto 8px;padding:0 16px}
-  h1{margin:0 0 6px}
-  main{max-width:980px;margin:0 auto;padding:12px 16px 40px}
-  .card{background:var(--card);border:1px solid #e5e7eb;border-radius:12px;padding:16px}
-  .row{display:flex;gap:12px;align-items:center;justify-content:space-between;border-bottom:1px dashed #eee;padding:10px 6px}
-  .row:last-child{border-bottom:0}
-  code{background:#f1f5f9;padding:2px 6px;border-radius:6px}
-  .mut{color:var(--mut)}
-  a{color:#0369a1;text-decoration:none}
-  a:hover{text-decoration:underline}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;max-width:960px;margin:40px auto;padding:0 16px;background:#0b1220;color:#e6e9ef}
+  .card{background:#0f172a;border:1px solid #2a3346;border-radius:12px;padding:14px;margin:10px 0}
+  a{color:#8ab4ff}
+  .muted{opacity:.7}
+  code{background:#0b1220;border:1px solid #2a3346;padding:2px 6px;border-radius:6px}
 </style>
-<header>
-  <h1>zkSpend · Live Claims</h1>
-  <div class="mut">Data source: <code>docs/claims/index.json</code> (v0.2 storage stub)</div>
-</header>
-<main>
-  <div class="card">
-    <div id="updated" class="mut" style="margin-bottom:8px">loading…</div>
-    <div id="list"></div>
-  </div>
-</main>
+<h2>zkSpend · Live Claims</h2>
+<p class="muted">Data source: <code>docs/claims/index.json</code> (v0.2 storage stub)</p>
+<div id="list" class="card">loading…</div>
 
 <script>
-const EXPLORER_TX = "https://evm-testnet.0g.ai/tx/";
-const BASE = (location.pathname.endsWith("/")? location.pathname : location.pathname.replace(/\/[^/]*$/, "/"));
-const INDEX_URL = new URL("claims/index.json", BASE).toString();
-
-async function load(){
-  document.getElementById('updated').textContent = 'loading…';
+async function main(){
   try{
-    const res = await fetch(INDEX_URL, {cache: "no-store"});
-    const items = await res.json(); // [{file,tx,ts,cid,campaign,from}, ...]
-    const list = document.getElementById('list');
-    list.innerHTML = "";
-
-    const last = items.slice(-20).reverse();
-    for (const it of last){
-      const tx = it.tx || it.file.replace(/\.json$/,'');
-      const li = document.createElement('div');
-      li.className = 'row';
-      const cidShort = it.cid ? String(it.cid).slice(0,18)+'…' : '—';
-      li.innerHTML = `
-        <div>
-          <div>
-            tx=<a href="${EXPLORER_TX}${tx}" target="_blank">${tx.slice(0,10)}…</a>
-            · <a href="tx.html?tx=${tx}" target="_blank">view</a>
-          </div>
-          <div class="mut">from=${it.from?.slice(0,10) ?? '—'} · campaign=${it.campaign?.slice?.(0,10) ?? '—'}</div>
-        </div>
-        <div title="${it.cid ?? ''}">storage: <code>${cidShort}</code></div>
-      `;
-      list.appendChild(li);
+    const r = await fetch("docs/claims/index.json",{cache:"no-store"});
+    if(!r.ok){ document.getElementById('list').textContent = "No claims yet."; return; }
+    const items = await r.json();
+    if(!Array.isArray(items) || items.length===0){
+      document.getElementById('list').textContent = "No claims yet."; return;
     }
-
-    const ts = new Date().toISOString();
-    document.getElementById('updated').textContent = `Updated ${ts} · total ${items.length}`;
+    const ul = document.createElement('ul');
+    items.slice().reverse().forEach(it=>{
+      const li = document.createElement('li');
+      const a  = document.createElement('a');
+      a.href   = "docs/claims/"+it.tx+".json";
+      a.textContent = it.tx.slice(0,10)+"…";
+      a.target = "_blank";
+      li.appendChild(a);
+      li.appendChild(document.createTextNode(` · rc=${(it.rc||'').slice(0,10)}… · nul=${(it.nul||'').slice(0,10)}…`));
+      ul.appendChild(li);
+    });
+    const box = document.getElementById('list'); box.innerHTML=""; box.appendChild(ul);
   }catch(e){
-    document.getElementById('list').textContent = 'failed to load manifest';
+    document.getElementById('list').textContent = "Error: "+e.message;
   }
 }
-load();
+main();
 </script>
