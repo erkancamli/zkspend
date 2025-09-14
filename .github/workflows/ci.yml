@@ -8,17 +8,19 @@ jobs:
   foundry:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: stable
+        run: |
+          curl -L https://foundry.paradigm.xyz | bash
+          source ~/.bashrc || true
+          foundryup
+
       - name: Build
-        run: |
-          cd contracts
-          forge --version
-          forge build
+        working-directory: contracts
+        run: forge build --sizes
+
       - name: Test
-        run: |
-          cd contracts
-          forge test -vvv || true  # test yoksa pipeline kırılmasın
+        working-directory: contracts
+        run: forge test -vvv
