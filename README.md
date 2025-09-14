@@ -75,3 +75,11 @@ All secrets stay in scripts/env.local (git-ignored).
 License
 
 MIT
+
+---
+
+### Storage Roadmap
+- **v0.1**: Public JSON artifacts (GitHub Pages under `docs/claims/`)
+- **v0.2**: Push artifacts to **0G Storage** (CLI/SDK), keep CID/hash in claim record
+- **v0.3**: ZK verifier emits storage pointer; end-to-end verifiable proof trail
+
