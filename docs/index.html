@@ -1,113 +1,69 @@
 <!doctype html>
-<html lang="en">
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>zkSpend · Live (0G Galileo)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>zkSpend · Live Claims (0G Galileo)</title>
 <style>
-  :root{--fg:#111;--muted:#666;--bg:#fff;--card:#fafafa;--bd:#e5e7eb}
-  *{box-sizing:border-box} body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
-  color:var(--fg);background:var(--bg);margin:0;padding:24px}
-  header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
-  h1{font-size:24px;margin:0} .muted{color:var(--muted)}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
-  .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px}
-  .addr{font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
-  button{padding:10px 14px;border-radius:10px;border:1px solid var(--bd);background:#fff;cursor:pointer}
-  a{color:#2563eb;text-decoration:none} a:hover{text-decoration:underline}
-  ul{padding-left:18px;margin:10px 0}
-  footer{margin-top:28px;font-size:12px}
+  :root{--fg:#0b1020;--mut:#6b7280;--ok:#16a34a;--bg:#f8fafc;--card:#fff}
+  body{font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;background:var(--bg);color:var(--fg);margin:0}
+  header{max-width:980px;margin:24px auto 8px;padding:0 16px}
+  h1{margin:0 0 6px}
+  main{max-width:980px;margin:0 auto;padding:12px 16px 40px}
+  .card{background:var(--card);border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+  .row{display:flex;gap:12px;align-items:center;justify-content:space-between;border-bottom:1px dashed #eee;padding:10px 6px}
+  .row:last-child{border-bottom:0}
+  code{background:#f1f5f9;padding:2px 6px;border-radius:6px}
+  .mut{color:var(--mut)}
+  a{color:#0369a1;text-decoration:none}
+  a:hover{text-decoration:underline}
 </style>
 <header>
-  <div>
-    <h1>zkSpend — Live (0G Galileo)</h1>
-    <div class="muted">Fixed RPC · shows campaign balances & last 10 claims</div>
-  </div>
-  <div><button id="refresh">Refresh</button></div>
+  <h1>zkSpend · Live Claims</h1>
+  <div class="mut">Data source: <code>docs/claims/index.json</code> (v0.2 storage stub)</div>
 </header>
-
-<section class="grid" id="wrap"></section>
-
-<footer class="muted">
-  Explorer: <a href="https://evm-testnet.0g.ai" target="_blank" rel="noreferrer">evm-testnet.0g.ai</a> ·
-  Repo: <a href="https://github.com/erkancamli/zkspend" target="_blank" rel="noreferrer">erkancamli/zkspend</a>
-</footer>
+<main>
+  <div class="card">
+    <div id="updated" class="mut" style="margin-bottom:8px">loading…</div>
+    <div id="list"></div>
+  </div>
+</main>
 
 <script>
-const RPC = "https://evmrpc-testnet.0g.ai";            // fixed public RPC
-const EXPL = "https://evm-testnet.0g.ai";
-const CLAIMED_SIG = "0xcbcb845d94d59960a0c6e8b3a1f47ad81bb57269de43e89ff4f0fa656246f5f6";
-
-const CAMPAIGNS = [
-  { name: "Campaign (0.1 ETH reward)", addr: "0x8bbac06bd634f12250079fd1470c2016157f6bd8" },
-  { name: "Campaign (0.002 ETH reward)", addr: "0xd35116e3984b9e7564079750ab726aa4c1d7e77d" },
-];
-
-function rpc(method, params=[]) {
-  return fetch(RPC, {
-    method: "POST",
-    headers: {"content-type":"application/json"},
-    body: JSON.stringify({jsonrpc:"2.0", id: 1, method, params})
-  }).then(r => r.json()).then(j => {
-    if (j.error) throw new Error(j.error.message);
-    return j.result;
-  });
-}
-
-function fmtEth(hexWei){
-  if(!hexWei) return "0";
-  const n = BigInt(hexWei);
-  const d = 10n**18n;
-  const i = n / d, f = n % d;
-  const frac = f.toString().padStart(18,'0').replace(/0+$/,'');
-  return frac ? `${i}.${frac}` : `${i}`;
-}
-
-async function loadOne(cg){
-  const wrap = document.getElementById("wrap");
-  const card = document.createElement("div");
-  card.className = "card";
-  card.innerHTML = `
-    <h3>${cg.name}</h3>
-    <div class="addr"><a href="${EXPL}/address/${cg.addr}" target="_blank">${cg.addr}</a></div>
-    <p><b>Balance:</b> <span class="bal">…</span> ETH</p>
-    <p><b>Recent Claims (last 10)</b></p>
-    <ul class="claims"><li class="muted">Loading…</li></ul>
-  `;
-  wrap.appendChild(card);
-
-  const balWei = await rpc("eth_getBalance", [cg.addr, "latest"]);
-  card.querySelector(".bal").textContent = fmtEth(balWei);
-
-  const latest = await rpc("eth_blockNumber", []);
-  const latestNum = parseInt(latest, 16);
-  const from = Math.max(latestNum - 200000, 0);
-  const logs = await rpc("eth_getLogs", [{
-    address: cg.addr,
-    fromBlock: "0x" + from.toString(16),
-    toBlock: latest,
-    topics: [CLAIMED_SIG]
-  }]);
-
-  const ul = card.querySelector(".claims");
-  ul.innerHTML = "";
-  logs.slice(-10).reverse().forEach(l => {
-    const hex = l.data.startsWith("0x") ? l.data.slice(2) : l.data;
-    const rc  = "0x" + hex.slice(0, 64);
-    const nul = "0x" + hex.slice(64, 128);
-    const li = document.createElement("li");
-    const txs = l.transactionHash.slice(0,10)+"…";
-    li.innerHTML = `tx=<a href="${EXPL}/tx/${l.transactionHash}" target="_blank">${txs}</a> · RC=${rc.slice(0,10)}… · NUL=${nul.slice(0,10)}…`;
-    ul.appendChild(li);
-  });
-  if (logs.length === 0) ul.innerHTML = '<li class="muted">No claims yet.</li>';
-}
+const EXPLORER_TX = "https://evm-testnet.0g.ai/tx/";
+const BASE = (location.pathname.endsWith("/")? location.pathname : location.pathname.replace(/\/[^/]*$/, "/"));
+const INDEX_URL = new URL("claims/index.json", BASE).toString();
 
 async function load(){
-  document.getElementById('refresh').disabled = true;
-  document.getElementById('wrap').innerHTML = "";
-  for (const c of CAMPAIGNS) await loadOne(c);
-  document.getElementById('refresh').disabled = false;
+  document.getElementById('updated').textContent = 'loading…';
+  try{
+    const res = await fetch(INDEX_URL, {cache: "no-store"});
+    const items = await res.json(); // [{file,tx,ts,cid,campaign,from}, ...]
+    const list = document.getElementById('list');
+    list.innerHTML = "";
+
+    const last = items.slice(-20).reverse();
+    for (const it of last){
+      const tx = it.tx || it.file.replace(/\.json$/,'');
+      const li = document.createElement('div');
+      li.className = 'row';
+      const cidShort = it.cid ? String(it.cid).slice(0,18)+'…' : '—';
+      li.innerHTML = `
+        <div>
+          <div>
+            tx=<a href="${EXPLORER_TX}${tx}" target="_blank">${tx.slice(0,10)}…</a>
+            · <a href="tx.html?tx=${tx}" target="_blank">view</a>
+          </div>
+          <div class="mut">from=${it.from?.slice(0,10) ?? '—'} · campaign=${it.campaign?.slice?.(0,10) ?? '—'}</div>
+        </div>
+        <div title="${it.cid ?? ''}">storage: <code>${cidShort}</code></div>
+      `;
+      list.appendChild(li);
+    }
+
+    const ts = new Date().toISOString();
+    document.getElementById('updated').textContent = `Updated ${ts} · total ${items.length}`;
+  }catch(e){
+    document.getElementById('list').textContent = 'failed to load manifest';
+  }
 }
-document.getElementById('refresh').onclick = load;
 load();
 </script>

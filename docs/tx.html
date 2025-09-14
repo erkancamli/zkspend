@@ -1,47 +1,111 @@
-<!doctype html><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>zkSpend – Tx Viewer (0G Galileo)</title>
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>zkSpend – TX Viewer</title>
 <style>
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;max-width:980px;margin:40px auto;padding:0 16px}
-  header{display:flex;gap:8px;align-items:center}
-  input,button{font:inherit;padding:10px;border:1px solid #ddd;border-radius:10px}
-  pre{background:#0b1220;color:#d1e6ff;padding:14px;border-radius:12px;overflow:auto}
-  .ok{color:#0a0}
-  .bad{color:#c00}
+  :root{--fg:#0b1020;--mut:#6b7280;--ok:#16a34a;--bg:#f8fafc;--card:#fff}
+  body{font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;background:var(--bg);color:var(--fg);margin:0}
+  header,main{max-width:980px;margin:24px auto;padding:0 16px}
+  .card{background:var(--card);border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+  input,button{font:inherit;padding:8px 10px;border:1px solid #d1d5db;border-radius:10px}
+  button{cursor:pointer}
+  pre{overflow:auto;background:#0f172a;color:#e5e7eb;border-radius:12px;padding:12px}
+  .mut{color:var(--mut)}
+  a{color:#0369a1;text-decoration:none}
+  a:hover{text-decoration:underline}
 </style>
 <header>
-  <h2 style="margin:0">Tx Receipt</h2>
+  <h1>zkSpend · TX Viewer</h1>
 </header>
-<p>
-  RPC:
-  <input id="rpc" size="60"
-    value="https://evmrpc-testnet.0g.ai">
-</p>
-<p>
-  Tx:
-  <input id="tx" size="64" placeholder="0x...">
-  <button id="load">Load</button>
-</p>
-<div id="meta"></div>
-<pre id="json"></pre>
+<main class="card">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+    <label class="mut">RPC</label>
+    <input id="rpc" size="40" value="https://evmrpc-testnet.0g.ai">
+    <input id="tx" size="66" placeholder="0x...">
+    <button id="load">Load</button>
+  </div>
+
+  <div id="summary" class="mut" style="margin-bottom:8px">—</div>
+
+  <h3>Storage pointer</h3>
+  <div id="storage" class="card" style="padding:10px;margin-bottom:12px;background:#f8fafc"></div>
+
+  <h3>Receipt (raw)</h3>
+  <pre id="raw">—</pre>
+</main>
+
 <script>
-const CLAIMED_SIG = "0xcbcb845d94d59960a0c6e8b3a1f47ad81bb57269de43e89ff4f0fa656246f5f6";
-async function rpc(m, p){const r=await fetch(document.getElementById('rpc').value,{method:"POST",headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:"2.0",id:1,method:m,params:p})});return (await r.json()).result}
-function pp(x){return JSON.stringify(x,null,2)}
-async function load(){
-  const txh=document.getElementById('tx').value.trim();
-  if(!txh) return;
-  const rcp=await rpc("eth_getTransactionReceipt",[txh]);
-  const succ=rcp && rcp.status==="0x1";
-  document.getElementById('meta').innerHTML = succ? `<b class=ok>Success</b>` : `<b class=bad>Failed</b>`;
-  // Basit event çıkarımı
-  const ev = (rcp?.logs||[]).find(l=>l.topics && l.topics[0]===CLAIMED_SIG);
-  if(ev){
-    const hex=(ev.data||"").replace(/^0x/,"");
-    const rc ="0x"+hex.slice(0,64);
-    const nul="0x"+hex.slice(64,128);
-    document.getElementById('meta').innerHTML += ` · RC=${rc.slice(0,10)}… · NUL=${nul.slice(0,10)}…`;
-  }
-  document.getElementById('json').textContent = pp(rcp);
+const EXPLORER_TX = "https://evm-testnet.0g.ai/tx/";
+const BASE = (location.pathname.endsWith("/")? location.pathname : location.pathname.replace(/\/[^/]*$/, "/"));
+
+const q = new URLSearchParams(location.search);
+if (q.get('tx')) document.getElementById('tx').value = q.get('tx');
+
+async function rpc(method, params){
+  const url = document.getElementById('rpc').value.trim();
+  const body = JSON.stringify({jsonrpc:"2.0",id:1,method,params});
+  const res = await fetch(url, {method:"POST",headers:{"content-type":"application/json"},body});
+  const j = await res.json();
+  if (j.error) throw new Error(j.error.message);
+  return j.result;
 }
-document.getElementById('load').onclick=load;
+
+function decodeClaimLog(log){
+  // topics[0] == keccak("Claimed(address)")
+  // data = RC(32) + NUL(32)
+  const data = log.data.startsWith("0x") ? log.data.slice(2) : log.data;
+  return {
+    rc:  "0x"+data.slice(0,64),
+    nul: "0x"+data.slice(64,128)
+  };
+}
+
+async function load(){
+  const tx = document.getElementById('tx').value.trim();
+  if(!tx) return;
+
+  // 1) storage pointer (local JSON)
+  const claimUrl = new URL(`claims/${tx}.json`, BASE).toString();
+  const storageEl = document.getElementById('storage');
+  try{
+    const cRes = await fetch(claimUrl, {cache:"no-store"});
+    if (cRes.ok){
+      const c = await cRes.json();
+      const url = c?.storage?.url;
+      const cid = c?.storage?.cid;
+      let line = '';
+      if (url) line = `URL: <a href="${url}" target="_blank">${url}</a>`;
+      else if (cid) line = `CID: <code>${cid}</code>`;
+      else line = '—';
+      storageEl.innerHTML = line + `<div class="mut">file: <code>${tx}.json</code></div>`;
+    } else {
+      storageEl.textContent = 'No local claim JSON found.';
+    }
+  }catch(e){
+    storageEl.textContent = 'Failed to load local claim JSON.';
+  }
+
+  // 2) receipt
+  try{
+    const r = await rpc("eth_getTransactionReceipt",[tx]);
+    document.getElementById('raw').textContent = JSON.stringify(r,null,2);
+
+    const ok = (r && r.status === "0x1");
+    const log = (r?.logs||[]).find(l => l.address && l.address.toLowerCase() === (r.to||"").toLowerCase());
+    let rc = "—", nul="—";
+    if (log) { const d = decodeClaimLog(log); rc=d.rc; nul=d.nul; }
+
+    const blk = parseInt(r.blockNumber||"0x0");
+    document.getElementById('summary').innerHTML =
+      (ok? "✅ Success":"❌ Failed")
+      + ` · block <b>${blk}</b>`
+      + ` · gasUsed ${parseInt(r.gasUsed||"0x0")}`
+      + ` · <a href="${EXPLORER_TX}${tx}" target="_blank">explorer</a>`
+      + `<br><span class="mut">RC=${rc.slice(0,12)}… · NUL=${nul.slice(0,12)}…</span>`;
+  }catch(e){
+    document.getElementById('summary').textContent = "RPC error: "+e.message;
+  }
+}
+document.getElementById('load').onclick = load;
+if (document.getElementById('tx').value) load();
 </script>
