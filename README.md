@@ -83,3 +83,8 @@ MIT
 - **v0.2**: Push artifacts to **0G Storage** (CLI/SDK), keep CID/hash in claim record
 - **v0.3**: ZK verifier emits storage pointer; end-to-end verifiable proof trail
 
+
+**Claims (JSON artifacts):**  
+Public proof artifacts are published under GitHub Pages:  
+`https://erkancamli.github.io/zkspend/claims/<FILE>.json`
+
