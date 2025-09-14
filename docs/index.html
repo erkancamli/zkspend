@@ -10,13 +10,13 @@
   code{background:#0b1220;border:1px solid #2a3346;padding:2px 6px;border-radius:6px}
 </style>
 <h2>zkSpend · Live Claims</h2>
-<p class="muted">Data source: <code>docs/claims/index.json</code> (v0.2 storage stub)</p>
+<p class="muted">Data source: <code>claims/index.json</code> <small>(v0.2 storage stub)</small></p>
 <div id="list" class="card">loading…</div>
 
 <script>
 async function main(){
   try{
-    const r = await fetch("docs/claims/index.json",{cache:"no-store"});
+    const r = await (async ()=>{ for (const u of ['claims/index.json','docs/claims/index.json']) {   try { const r = await fetch(u, {cache:'no-store'}); if (r.ok) return r; } catch(e){} } return new Response(null, {status:404});})();
     if(!r.ok){ document.getElementById('list').textContent = "No claims yet."; return; }
     const items = await r.json();
     if(!Array.isArray(items) || items.length===0){

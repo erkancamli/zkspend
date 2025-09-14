@@ -67,7 +67,7 @@ async function load(){
 
     // dene: docs/claims/<tx>.json içinden storage pointer oku
     try{
-      const r = await fetch(`docs/claims/${tx}.json`);
+      const r = await (async ()=>{ for (const u of [`claims/${tx}.json`, `docs/claims/${tx}.json`]) {   try { const r = await fetch(u, {cache:'no-store'}); if (r.ok) return r; } catch(e){} } return new Response(null, {status:404});})();
       if(r.ok){
         const j = await r.json();
         const p = j?.storage?.pointer || j?.pointer || null;
