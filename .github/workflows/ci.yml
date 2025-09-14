@@ -1,0 +1,43 @@
+name: ci
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  forge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Show layout (debug)
+        run: |
+          echo "::group::tree"
+          pwd
+          ls -la
+          echo "--- contracts/"
+          ls -la contracts || true
+          echo "::endgroup::"
+
+      # forge-std yoksa getir
+      - name: Ensure forge-std
+        run: |
+          if [ ! -d contracts/lib/forge-std ]; then
+            echo "forge-std missing; installing…"
+            forge install --root contracts --no-commit foundry-rs/forge-std
+          else
+            echo "forge-std present."
+          fi
+
+      # Kökü açıkça 'contracts' olarak vererek build
+      - name: Forge build
+        run: forge build --root contracts -vvv
