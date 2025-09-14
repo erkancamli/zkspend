@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-source ~/zkspend/scripts/env.local
-: "${RPC_URL:?}"; : "${PRIVATE_KEY:?}"; : "${TREASURY:?0x0000000000000000000000000000000000000000}"
+source "$(dirname "$0")/env.local"
+: "${RPC_URL:?}"; : "${PRIVATE_KEY:?}"; : "${TREASURY:=$FROM}"
 FACTORY=0x8712b078774df0988bC89f7939154E0D72fCf6f2
 ROOT=0x0000000000000000000000000000000000000000000000000000000000000001
 START=$(date +%s)
