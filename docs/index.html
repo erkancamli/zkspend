@@ -26,7 +26,7 @@ async function main(){
     items.slice().reverse().forEach(it=>{
       const li = document.createElement('li');
       const a  = document.createElement('a');
-      a.href   = "docs/claims/"+it.tx+".json";
+      a.href   = "claims/"+it.tx+".json";
       a.textContent = it.tx.slice(0,10)+"…";
       a.target = "_blank";
       li.appendChild(a);
