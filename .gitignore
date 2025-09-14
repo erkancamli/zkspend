@@ -27,3 +27,5 @@ receipt_*.jpeg
 # Editor / OS
 .DS_Store
 .vscode/
+
+0g-storage-go-starter-kit/

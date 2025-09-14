@@ -1,81 +1,81 @@
 #!/usr/bin/env bash
-# Bu script, /tmp/claim_auto.json verisini ve son TX bilgisini alır,
-# docs/claims/ içine ayrıntılı bir JSON yazıp bir manifest (index.json) günceller.
-
+# Tries 0G storage first; on failure writes to GitHub Pages (docs/claims)
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CLAIM_TMP_JSON="/tmp/claim_auto.json"
-OUT_DIR="$REPO_ROOT/docs/claims"
-MANIFEST="$OUT_DIR/index.json"
+TX="${1:-}"; RC="${2:-}"; NUL="${3:-}"; PUB="${4:-}"
+[ -z "$TX" ] && { echo "usage: $0 <tx> <rc> <nul> <pub>"; exit 1; }
 
-# ENV ile gelenler:
-TX="${TX:-}"                  # claim_once.sh içinde export edilecek
-CAMPAIGN="${CAMPAIGN:-}"
-FROM="${FROM:-}"
+REPO_DIR="${REPO_DIR:-$HOME/zkspend}"
+ENV_FILE="$REPO_DIR/scripts/env.local"
+[ -f "$ENV_FILE" ] && source "$ENV_FILE" || true
 
-mkdir -p "$OUT_DIR"
+STORE_BACKEND="${STORE_BACKEND:-hybrid}"           # hybrid | 0g | pages
+OG_STORAGE_URL="${OG_STORAGE_URL:-http://127.0.0.1:8080}"
+OG_UPLOAD="${OG_STORAGE_URL%/}/api/v1/upload"
+OG_DOWNLOAD_BASE="${OG_STORAGE_URL%/}/api/v1/download"
 
-if [ ! -s "$CLAIM_TMP_JSON" ]; then
-  echo "claim json not found: $CLAIM_TMP_JSON" >&2
-  exit 1
+# -------- helper: write artifact to docs/claims --------
+write_pages() {
+  local CID="${1:-}"; local URL="${2:-}"
+  mkdir -p "$REPO_DIR/docs/claims"
+  local TS="$(date -u +%Y%m%dT%H%M%SZ)"
+  local OUT="$REPO_DIR/docs/claims/$TX.json"
+
+  jq -n --arg ts "$TS" --arg tx "$TX" --arg rc "$RC" --arg nul "$NUL" --arg pub "$PUB" \
+        --arg cid "$CID" --arg url "$URL" --arg campaign "${CAMPAIGN:-}" --arg from "${FROM:-}" '
+    {
+      ts:$ts, tx:$tx, rc:$rc, nul:$nul, pub:$pub,
+      proof:"0x",
+      campaign:$campaign, from:$from,
+      storage:{ cid:$cid, url: ( $url // null ) }
+    }' > "$OUT"
+
+  # manifest
+  local SHASUM
+  SHASUM="$(sha256sum "$OUT" | awk '{print $1}')"
+  local MANI="$REPO_DIR/docs/claims/index.json"
+  touch "$MANI"
+  if ! jq . "$MANI" >/dev/null 2>&1; then echo "[]" > "$MANI"; fi
+  tmp="$(mktemp)"
+  jq --arg f "$(basename "$OUT")" \
+     --arg tx "$TX" \
+     --arg ts "$TS" \
+     --arg cid "sha256:$SHASUM" \
+     --arg campaign "${CAMPAIGN:-}" \
+     --arg from "${FROM:-}" \
+     '. += [{"file":$f,"tx":$tx,"ts":$ts,"cid":$cid,"campaign":$campaign,"from":$from}]' \
+     "$MANI" > "$tmp" && mv "$tmp" "$MANI"
+
+  echo "✓ claim stored: $OUT"
+  echo "✓ manifest updated: $MANI"
+}
+
+# -------- try 0G first (if hybrid/0g) --------
+if [ "$STORE_BACKEND" = "hybrid" ] || [ "$STORE_BACKEND" = "0g" ]; then
+  if command -v curl >/dev/null 2>&1; then
+    echo "→ Trying 0G storage upload… $OG_UPLOAD"
+    # küçük, deterministik bir içerik yolla: claim özet JSON (rc/nul/pub/tx)
+    payload="$(jq -n --arg tx "$TX" --arg rc "$RC" --arg nul "$NUL" --arg pub "$PUB" '{tx:$tx,rc:$rc,nul:$nul,pub:$pub}')"
+    og_resp="$(mktemp)"
+    if curl -fsS -m 30 -X POST \
+         -F "file=@-;filename=claim_${TX}.json;type=application/json" \
+         "$OG_UPLOAD" <<<"$payload" | tee "$og_resp" >/dev/null
+    then
+      # response: { root_hash: "..."} or {rootHash:"..."}
+      RH="$(jq -r '..|.root_hash?,.rootHash? // empty' "$og_resp" | head -n1)"
+      if [ -n "$RH" ] && [ "$RH" != "null" ]; then
+        echo "✓ 0G upload ok: root_hash=$RH"
+        write_pages "$RH" "$OG_DOWNLOAD_BASE/$RH"
+        exit 0
+      else
+        echo "⚠ 0G upload responded but no root_hash. Falling back."
+      fi
+    else
+      echo "⚠ 0G upload failed (timeout/conn). Falling back to Pages."
+    fi
+  fi
 fi
 
-# Dosya adı (TX varsa onu kullan, yoksa timestamp)
-TS="$(date -u +%Y%m%dT%H%M%SZ)"
-BASENAME="${TX:-claim-$TS}"
-OUT_JSON="$OUT_DIR/$BASENAME.json"
-
-# İlk JSON’u oku
-RC=$(jq -r .receiptCommitment "$CLAIM_TMP_JSON")
-NUL=$(jq -r .nullifier "$CLAIM_TMP_JSON")
-PUB=$(jq -r .publicInputHash "$CLAIM_TMP_JSON")
-PROOF=$(jq -r '.proof // "0x"' "$CLAIM_TMP_JSON")
-
-# Kayıt gövdesi (CID eklemeden önce geçici)
-jq -n \
-  --arg ts "$TS" \
-  --arg tx "$TX" \
-  --arg rc "$RC" \
-  --arg nul "$NUL" \
-  --arg pub "$PUB" \
-  --arg proof "$PROOF" \
-  --arg campaign "$CAMPAIGN" \
-  --arg from "$FROM" \
-'{
-  ts: $ts,
-  tx: $tx,
-  rc: $rc,
-  nul: $nul,
-  pub: $pub,
-  proof: $proof,
-  campaign: $campaign,
-  from: $from,
-  storage: { cid: null, url: null }
-}' > "$OUT_JSON"
-
-# Bu kaydı uploader stub’a da basalım (gerçek 0G SDK buraya entegre edilecek)
-CID="$(scripts/uploader_0g_stub.sh "$OUT_JSON")" || CID=""
-# URL ise url, değilse cid alanına yaz
-if [[ "$CID" == http*://* ]]; then
-  jq --arg url "$CID" '.storage.url = $url' "$OUT_JSON" > "${OUT_JSON}.tmp" && mv "${OUT_JSON}.tmp" "$OUT_JSON"
-else
-  jq --arg cid "$CID" '.storage.cid = $cid' "$OUT_JSON" > "${OUT_JSON}.tmp" && mv "${OUT_JSON}.tmp" "$OUT_JSON"
-fi
-
-# Manifest (index.json) güncelle
-if [ ! -f "$MANIFEST" ]; then
-  echo '[]' > "$MANIFEST"
-fi
-
-jq --arg file "$(basename "$OUT_JSON")" \
-   --arg tx "$TX" \
-   --arg ts "$TS" \
-   --arg cid "$CID" \
-   --arg campaign "$CAMPAIGN" \
-   --arg from "$FROM" \
-   '. += [{file:$file, tx:$tx, ts:$ts, cid:$cid, campaign:$campaign, from:$from}]' \
-   "$MANIFEST" > "${MANIFEST}.tmp" && mv "${MANIFEST}.tmp" "$MANIFEST"
-
-echo "✓ claim stored: $OUT_JSON"
-echo "✓ manifest updated: $MANIFEST"
+# -------- fallback: GitHub Pages only --------
+write_pages "" ""
+exit 0
