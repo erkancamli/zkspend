@@ -23,10 +23,16 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y jq
       - name: Fix & Export
+      - name: Build badges
+        env:
+          OG_RPC_URL: ${ { secrets.OG_RPC_URL } }
+        run: |
+          bash scripts/badges_build.sh
         run: |
           bash scripts/claims_fixup.sh
           bash scripts/claims_export.sh
       - name: Commit & Push
+          git add docs/badges/claims.json docs/badges/balance.json
         run: |
           if ! git diff --quiet; then
             git config user.name  "github-actions[bot]"

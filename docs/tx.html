@@ -1,88 +1,94 @@
 <!doctype html>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>zkSpend · TX Viewer (0G Galileo)</title>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>zkSpend · TX Viewer</title>
 <style>
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;max-width:960px;margin:40px auto;padding:0 16px;background:#0b1220;color:#e6e9ef}
-  header{display:flex;gap:8px;align-items:center}
-  input,button{font:inherit;padding:10px;border-radius:10px;border:1px solid #2a3346;background:#0f172a;color:#e6e9ef}
-  button{cursor:pointer}
-  .row{display:flex;gap:8px;align-items:center;margin:12px 0}
-  .label{opacity:.7;width:130px}
-  pre{background:#0f172a;border:1px solid #2a3346;border-radius:12px;padding:12px;overflow:auto}
-  a{color:#8ab4ff}
-  .muted{opacity:.7}
-  .ok{color:#9be4a8}.err{color:#ff8da1}
+:root{--bg:#0b1020;--card:#11182c;--muted:#9bb0d1;--text:#eaf2ff;--accent:#67e8f9;--ok:#3ddc97;--bad:#ff6b6b}
+*{box-sizing:border-box} body{margin:0;font:15px/1.5 ui-sans-serif,system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:980px;margin:40px auto;padding:0 16px}
+.card{background:var(--card);border:1px solid #1f2a44;border-radius:14px;padding:18px 16px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+h1{margin:0 0 10px;font-size:20px} a{color:var(--accent);text-decoration:none}
+.row{display:grid;grid-template-columns:140px 1fr;gap:10px;padding:8px 0;border-top:1px solid #1f2a44}
+.row:first-of-type{border-top:none}
+.k{color:var(--muted)} .v code{word-break:break-all}
+.badge{display:inline-flex;align-items:center;gap:6px;background:#0f233f;border:1px solid #1f2a44;border-radius:999px;padding:6px 10px;margin-right:8px}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid #1f2a44;background:#0f233f;padding:8px 10px;border-radius:10px;cursor:pointer}
+.btn:hover{background:#132b50}
+.note{color:var(--muted);margin-top:12px}
+.err{color:var(--bad)}
+.ok{color:var(--ok)}
+.flex{display:flex;flex-wrap:wrap;gap:8px}
 </style>
-<header>
-  <h2 style="margin:0">zkSpend · TX Viewer</h2>
-</header>
-
-<div class="row">
-  <div class="label">RPC</div>
-  <input id="rpc" style="flex:1" value="https://evmrpc-testnet.0g.ai">
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>zkSpend · Transaction</h1>
+    <div id="badges" class="flex" style="margin:8px 0 6px"></div>
+    <div id="content"></div>
+    <div class="note">Deep-link: <code id="deeplink"></code></div>
+  </div>
 </div>
-<div class="row">
-  <div class="label">Tx</div>
-  <input id="tx" style="flex:1" placeholder="0x...">
-  <button id="load">Load</button>
-</div>
-
-<div class="row"><div class="label">Explorer</div>
-  <div id="expl" class="muted">—</div>
-</div>
-
-<div class="row"><div class="label">Storage pointer</div>
-  <div id="pointer" class="muted">—</div>
-</div>
-
-<h3 style="margin-top:24px">Receipt (raw)</h3>
-<pre id="raw">—</pre>
-
 <script>
 const qs = new URLSearchParams(location.search);
-if(qs.get('rpc')) document.getElementById('rpc').value = qs.get('rpc');
-if(qs.get('tx'))  document.getElementById('tx').value  = qs.get('tx');
+const tx = qs.get('tx') || qs.get('hash') || '';
+const base = location.pathname.replace(/\/tx\.html$/,'');
+const claimsBase = base + '/docs/claims';
+const badges = document.getElementById('badges');
+const content = document.getElementById('content');
+document.getElementById('deeplink').textContent = location.href;
 
-async function jrpc(url, method, params){
-  const r = await fetch(url,{method:"POST",headers:{'content-type':'application/json'},
-    body: JSON.stringify({jsonrpc:"2.0",id:1,method,params})});
-  if(!r.ok) throw new Error("RPC HTTP "+r.status);
-  const j = await r.json();
-  if(j.error) throw new Error(j.error.message||"RPC error");
-  return j.result;
+function row(k, v){ return `
+  <div class="row"><div class="k">${k}</div><div class="v">${v}</div></div>
+`}
+
+function btn(label, onclick){ const b=document.createElement('button'); b.className='btn'; b.textContent=label; b.onclick=onclick; return b; }
+
+if(!tx){
+  content.innerHTML = `<p class="err">TX hash eksik. Örnek: <code>?tx=0xabc...</code></p>`;
+}else{
+  const url = `${claimsBase}/${tx}.json`;
+  fetch(url, {cache:'no-store'}).then(async r=>{
+    if(!r.ok){ throw new Error('Claim JSON bulunamadı'); }
+    const j = await r.json();
+    const rc = j.rc || j.receiptCommitment || '';
+    const nul = j.nul || j.nullifier || '';
+    const pub = j.pub || j.publicInputHash || '';
+    const campaign = (j.campaign || j.contract || '').toLowerCase();
+    const from = (j.from || '');
+    const ts = j.ts || '';
+    const explorer = `https://evm-testnet.0g.ai/tx/${encodeURIComponent(tx)}`;
+
+    badges.innerHTML = `
+      <span class="badge">TX: <code>${tx.slice(0,10)}…</code></span>
+      <a class="badge" href="${explorer}" target="_blank" rel="noreferrer">Open in 0G Explorer ↗</a>
+      <a class="badge" href="${claimsBase}/${tx}.json" target="_blank" rel="noreferrer">Claim JSON ↗</a>
+    `;
+
+    const c = [];
+    c.push(row('tx', `<code>${tx}</code>`));
+    c.push(row('timestamp', ts ? `<code>${ts}</code>` : '<span class="err">—</span>'));
+    c.push(row('campaign', campaign ? `<code>${campaign}</code>` : '<span class="err">—</span>'));
+    c.push(row('from', from ? `<code>${from}</code>` : '<span class="err">—</span>'));
+    c.push(row('receiptCommitment', rc ? `<code>${rc}</code>` : '<span class="err">—</span>'));
+    c.push(row('nullifier', nul ? `<code>${nul}</code>` : '<span class="err">—</span>'));
+    c.push(row('publicInputHash', pub ? `<code>${pub}</code>` : '<span class="err">—</span>'));
+    content.innerHTML = c.join('');
+
+    // butonlar
+    const bar = document.createElement('div'); bar.className='flex';
+    bar.style.marginTop = '12px';
+    bar.appendChild(btn('Kopyala TX', async ()=>{ await navigator.clipboard.writeText(tx); alert('TX kopyalandı'); }));
+    bar.appendChild(btn('Linki Kopyala', async ()=>{ await navigator.clipboard.writeText(location.href); alert('Link kopyalandı'); }));
+    content.appendChild(bar);
+  }).catch(err=>{
+    badges.innerHTML='';
+    content.innerHTML = `<p class="err">Hata: ${err.message}</p>
+      <p class="note">Claim listesi: <a href="${base}/#claims">${base}/#claims</a></p>`;
+  });
 }
-
-function short(x){return x?x.slice(0,10)+"…":"—"}
-
-async function load(){
-  const rpc = document.getElementById('rpc').value.trim();
-  const tx  = document.getElementById('tx').value.trim();
-  document.getElementById('expl').innerHTML =
-    tx ? `<a target="_blank" href="https://evm-testnet.0g.ai/tx/${tx}">evm-testnet.0g.ai</a>` : '—';
-
-  try{
-    const rec = await jrpc(rpc,"eth_getTransactionReceipt",[tx]);
-    document.getElementById('raw').textContent = JSON.stringify(rec,null,2);
-
-    // dene: docs/claims/<tx>.json içinden storage pointer oku
-    try{
-      const r = await (async ()=>{ for (const u of [`claims/${tx}.json`, `docs/claims/${tx}.json`]) {   try { const r = await fetch(u, {cache:'no-store'}); if (r.ok) return r; } catch(e){} } return new Response(null, {status:404});})();
-      if(r.ok){
-        const j = await r.json();
-        const p = j?.storage?.pointer || j?.pointer || null;
-        document.getElementById('pointer').textContent = p || "no pointer (not published)";
-      }else{
-        document.getElementById('pointer').textContent = "no pointer (not published)";
-      }
-    }catch(e){
-      document.getElementById('pointer').textContent = "no pointer (not published)";
-    }
-  }catch(e){
-    document.getElementById('raw').textContent = "⚠ " + e.message +
-      "\n\nİpucu: RPC'yi https kullan; tx hash doğru olsun.";
-  }
-}
-document.getElementById('load').onclick = load;
-if(qs.get('tx')) load();
 </script>
+</body>
+</html>
