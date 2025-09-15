@@ -105,3 +105,7 @@ The latest claim artifacts are published via GitHub Pages:
 > ```bash
 > ./scripts/validate_claims.sh
 > ```
+
+### Published Claims
+- Live list: **https://erkancamli.github.io/zkspend/claims/**  
+- Manifest (raw): **https://erkancamli.github.io/zkspend/claims/index.json**
