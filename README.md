@@ -97,3 +97,41 @@ CAMPAIGN=0xd35116e3984b9e7564079750ab726aa4c1d7e77d
 Lisans
 
 MIT
+
+---
+
+### Storage Roadmap
+- **v0.1**: Public JSON artifacts (GitHub Pages under `docs/claims/`)
+- **v0.2**: Push artifacts to **0G Storage** (CLI/SDK), keep CID/hash in claim record
+- **v0.3**: ZK verifier emits storage pointer; end-to-end verifiable proof trail
+
+
+**Claims (JSON artifacts):**  
+Public proof artifacts are published under GitHub Pages:  
+`https://erkancamli.github.io/zkspend/claims/<FILE>.json`
+
+
+### Storage Roadmap
+- **v0.1:** Public JSON artifacts (GitHub Pages under `docs/claims/`)
+- **v0.2:** Push artifacts to **0G Storage** (CLI/SDK), keep CID/hash in claim record *(stubbed now: see `scripts/uploader_0g_stub.sh`)*  
+- **v0.3:** ZK verifier emits storage pointer; end-to-end verifiable proof trail
+
+## Claims (Published)
+The latest claim artifacts are published via GitHub Pages:
+
+- Manifest: `docs/claims/index.json`
+- Each claim: `docs/claims/<tx>.json` (contains `rc`, `nul`, `pub`, `tx`, optional storage pointer)
+
+> You can validate locally:
+>
+> ```bash
+> ./scripts/validate_claims.sh
+> ```
+
+### Published Claims
+- Live list: **https://erkancamli.github.io/zkspend/claims/**  
+- Manifest (raw): **https://erkancamli.github.io/zkspend/claims/index.json**
+Live
+Dashboard: https://erkancamli.github.io/zkspend/
+
+Claims: https://erkancamli.github.io/zkspend/claims.html
