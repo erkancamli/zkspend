@@ -1,0 +1,7 @@
+{
+  "tx": "0x0ef97e4d355ac12355df8cc6efbdafa4ce47c4bf537a646288e2e9a1852c2085",
+  "receiptCommitment": "0x90e341f4a884298eaa85da8ab9a923b6ea834a04f7021d3bf296f210acfe8a4a",
+  "nullifier": "0x19bfca22e88b29fbc1131ef7543a8fdf22ad9d05b92ccb2c4b6445f9f5e3c139",
+  "publicInputHash": "0x9eb15f170cc52788e50270d6fd9fc06e4b4c99b3591afad52e645c4c5a069dc7",
+  "cid": "sha256:906826a144b3cd614553b2877b9741b2dd725b6650af28bd368ca1a45f13acc4"
+}
