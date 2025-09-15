@@ -1,15 +1,10 @@
 # zkSpend — Private Receipt → On-Chain Reward (0G Galileo)
 
-[![Live Demo (GitHub Pages)](https://img.shields.io/badge/demo-live-0G%20Galileo)](https://erkancamli.github.io/zkspend/)
-[![CI: Validate Claims](https://github.com/erkancamli/zkspend/actions/workflows/validate-claims.yml/badge.svg)](https://github.com/erkancamli/zkspend/actions/workflows/validate-claims.yml)
-[![Pages Deploy](https://github.com/erkancamli/zkspend/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/erkancamli/zkspend/actions)
+[![GitHub Pages](https://img.shields.io/badge/demo-live-0G%20Galileo)](https://erkancamli.github.io/zkspend/)
+[![CI](https://github.com/erkancamli/zkspend/actions/workflows/pages/pages-build-deployment/badge.svg)](../../actions)
 
-**One-liner:** Turn receipts into on-chain rewards — **privately** — on 0G (Galileo).  
-Local Python worker → commitments/nullifier on-chain → contract pays out. **No PII leaves your machine.**
-
----
-
-## Live
+**One-liner**  
+Turn receipts into on-chain rewards — **privately** — on 0G (Galileo). Foundry contracts + local Python worker. **No PII leaves your machine.**
 
 - **Dashboard:** https://erkancamli.github.io/zkspend/
 - **Claims list:** https://erkancamli.github.io/zkspend/claims.html
@@ -19,157 +14,125 @@ Local Python worker → commitments/nullifier on-chain → contract pays out. **
 ## What this repo includes
 
 - **Contracts (Foundry):** `contracts/` (Campaign + Factory, 0G Galileo testnet)
-- **Worker (Python):** `worker/worker.py` creates `{RC, NUL, PUB, proof}` from a *local* receipt image
-- **One-click script:** `scripts/claim_once.sh` (safe gas, dry-run, EIP-1559 fallback)
-- **Storage stub:** `scripts/store_claim_stub.sh` → writes JSON artifacts to `docs/claims/` and updates `index.json`
-- **Docs (Pages):** lightweight dashboard (`docs/index.html`) + claims viewer (`docs/claims.html`)
-- **CI:** `.github/workflows/validate-claims.yml` validates claims & auto-rebuilds `docs/claims/index.json`
+- **Worker (Python):** `worker/` (creates **RC**, **NUL**, **PUB**, **proof** (stub) from a local receipt image)
+- **One-click claim:** `scripts/claim_once.sh` (safe gas, dry-run, EIP-1559 fallback)
+- **Storage stub:** `scripts/store_claim_stub.sh` → writes JSON artifacts to `docs/claims/*` and updates `docs/claims/index.json`
+- **Docs/Pages:** lightweight dashboard (`docs/index.html`) + claims viewer (`docs/claims.html`)
+- **Validator:** `scripts/validate_claims.sh` validates claims & auto-rebuilds `docs/claims/index.json`
 
 ---
 
 ## Network & addresses (0G Galileo Testnet)
 
-- **Chain ID:** `16601`
-- **Explorer:** https://evm-testnet.0g.ai
-- **Public RPC (example):** `https://evmrpc-testnet.0g.ai`
-- **Factory:** `0x8712b078774df0988bC89f7939154E0D72fCf6f2`
-- **Campaign (0.1 ETH reward):** `0x8bbac06bd634f12250079fd1470c2016157f6bd8`
-- **Campaign (0.002 ETH reward):** `0xd35116e3984b9e7564079750ab726aa4c1d7e77d`
+```text
+Chain ID      : 16601
+Explorer      : https://evm-testnet.0g.ai
+Public RPC    : https://evmrpc-testnet.0g.ai
 
-> You can fund a new campaign yourself; helper scripts are included (see **Create & fund a campaign**).
+Factory       : 0x8712b078774df0988bC89f7939154E0D72fCf6f2
+Campaign (0.10): 0x8bbac06bd634f12250079fd1470c2016157f6bd8
+Campaign (0.002): 0xd35116e3984b9e7564079750ab726aa4c1d7e77d
+You can fund a new campaign yourself; helper scripts are included (see Create & fund a campaign).
+
+Quick Start (3 steps)
+Works on Linux/macOS. On a clean server, this installs Foundry & Python, then guides you to set env.
+
+1) Bootstrap
+
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/erkancamli/zkspend/main/scripts/bootstrap.sh)"
+
+2) Configure
+
+# guided config
+~/zkspend/scripts/configure.sh
+
+# or edit manually
+nano ~/zkspend/scripts/env.local
+# set at least:
+# RPC_URL=...
+# PRIVATE_KEY=0x...
+# FROM=0x...
+# CAMPAIGN=0x...
+
+3) One-click claim
+
+# sample image included
+~/zkspend/scripts/claim_once.sh ~/zkspend/receipts/receipt_3.png
+Worker computes RC, NUL, PUB locally (image never leaves your machine).
+
+Contract emits the claim event (on 0G Galileo).
+
+A JSON artifact is written under docs/claims/ and the manifest docs/claims/index.json is updated.
+
+Publish artifacts to Pages (optional but recommended):
+
+git add docs/claims/*.json
+git commit -m "docs(claims): add latest"
+git push
+
+Create & fund a campaign (scripts)
+
+# deploy a new campaign from Factory (edit params inside as needed)
+./scripts/create_campaign.sh
+
+# fund an existing campaign
+./scripts/fund_campaign.sh
+Storage roadmap (0G integration)
+v0.1: Public JSON artifacts (GitHub Pages, docs/claims/*)
+
+v0.2: Push artifacts to 0G Storage (CLI/SDK or gateway), keep CID/hash in claim record
+
+v0.3: ZK verifier emits storage pointer; end-to-end verifiable proof trail
+
+Validate / audit artifacts
+
+./scripts/validate_claims.sh
+
+# verifies each docs/claims/*.json against on-chain RC/NUL and manifest CID
+
+Troubleshooting
+
+forge/cast not found → source ~/.bashrc  (or open a new shell)
+Pages 404 on new JSON → wait for “pages-build-deployment” workflow to finish
+Re-run validator → ./scripts/validate_claims.sh
+
+Dev notes
+Foundry: forge --version && cast --version
+
+Python venv: source worker/.venv/bin/activate
+
+Env: source scripts/env.local
+
+PRs & issues welcome. Let’s make private receipts useful ✨
 
 ---
 
-## Quick Start (3 steps)
+## Latest demo TX
 
-> Works on Linux/macOS. On a clean server, this installs Foundry & Python venv, then guides you to set env.
+0x51ad231e20976681553fca4f660cd474b2cec8c1112363c6feead30536840672
 
-1) **Bootstrap**
-```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/erkancamli/zkspend/main/scripts/bootstrap.sh)"
-Configure
+> Görmek için explorer’da TX hash’ini aratın (0G Galileo Testnet).
 
-bash
-Kodu kopyala
-# This asks for RPC_URL, PRIVATE_KEY, FROM, CAMPAIGN and writes scripts/env.local
-~/zkspend/scripts/configure.sh
-One-click claim
+---
 
-bash
-Kodu kopyala
-# Use any local receipt image (PNG/JPG). Example file is provided.
-~/zkspend/scripts/claim_once.sh ~/zkspend/receipts/receipt_3.png
-What happens:
+## Example `.env` (quick reference)
 
-Worker computes {RC, NUL, PUB} locally (no image leaves your machine).
+```ini
+# scripts/env.local (örnek)
+RPC_URL=https://evmrpc-testnet.0g.ai
+PRIVATE_KEY=0x........................................................
+FROM=0x....................................
+CAMPAIGN=0xd35116e3984b9e7564079750ab726aa4c1d7e77d
 
-Script dry-runs the call; if ok, submits on-chain tx to the Campaign.
+Known limitations
+Şu an ZK proof zincire stub olarak gidiyor; gizlilik akışı lokal çalışıyor.
 
-On success, stores a JSON artifact under docs/claims/ and updates docs/claims/index.json.
+Storage v0.1: JSON artefact’lar GitHub Pages’a yazılıyor (0G Storage entegrasyonu roadmap’te).
 
-You can then git add + commit + push to publish on GitHub Pages.
+Contact / Pitch
+DM: @erkancamli
 
-Verifying your claim
-bash
-Kodu kopyala
-# Replace with your TX hash from the script output
-TX=0x...your_tx_hash...
-cast receipt $TX --json | jq .
-
-# Or open in explorer:
-# https://evm-testnet.0g.ai/tx/<TX>
-Create & fund a campaign (optional)
-Use these if you want your own campaign (instead of the demo).
-
-bash
-Kodu kopyala
-# 1) Create campaign (defaults to ~0.002 ETH reward)
-~/zkspend/scripts/create_campaign.sh
-
-# 2) Fund it (send e.g. 0.02 ETH to the campaign)
-~/zkspend/scripts/fund_campaign.sh <CAMPAIGN_ADDR> 0.02
-Claims artifacts & CI
-Each successful claim writes a file: docs/claims/<TX>.json and updates docs/claims/index.json.
-
-The Claims Viewer reads index.json and shows TX/RC/NUL/CID:
-https://erkancamli.github.io/zkspend/claims.html
-
-CI: On every push, GitHub Actions:
-
-Runs scripts/validate_claims.sh to check RC/NUL against on-chain logs
-
-Rebuilds the manifest (scripts/rebuild_manifest.sh)
-
-Commits changes to docs/claims/index.json if needed
-
-Optional: 0G Storage (roadmap hook)
-Out-of-the-box we publish artifacts via GitHub Pages.
-We also ship a stub to integrate 0G storage:
-
-Set in scripts/env.local:
-
-ini
-Kodu kopyala
-STORE_BACKEND=pages          # default
-# STORE_BACKEND=0g
-# OG_STORAGE_URL=http://<your-og-storage-gateway>:8080/api/v1
-When STORE_BACKEND=0g, store_claim_stub.sh can POST the artifact to your gateway and include a storage.url in the JSON.
-
-Note: If you’re testing the public ZGS nodes and see timeouts, switch back to STORE_BACKEND=pages (fully functional for demos/hackathons).
-
-Folder layout
-bash
-Kodu kopyala
-zkspend/
-├─ contracts/                # Foundry contracts (Campaign, Factory, tests)
-├─ worker/                   # Python image worker
-│  ├─ .venv/                 # local venv
-│  ├─ requirements.txt
-│  └─ worker.py
-├─ scripts/
-│  ├─ bootstrap.sh           # one-line setup
-│  ├─ configure.sh           # creates scripts/env.local
-│  ├─ claim_once.sh          # one-click claim
-│  ├─ store_claim_stub.sh    # publish artifact (Pages or 0G)
-│  ├─ create_campaign.sh     # helper: deploy campaign via Factory
-│  └─ fund_campaign.sh       # helper: fund a campaign
-├─ docs/
-│  ├─ index.html             # live dashboard (balance + recent claims)
-│  ├─ claims.html            # claims table (reads docs/claims/index.json)
-│  ├─ .nojekyll
-│  └─ claims/
-│     ├─ <TX>.json
-│     └─ index.json
-└─ .github/workflows/
-   └─ validate-claims.yml    # CI: validate + rebuild manifest
-Troubleshooting
-cast: command not found
-Run: source ~/.bashrc (or open a fresh shell). If needed: foundryup.
-
-Tx revert: spent
-You tried re-using a nullifier. Re-run with a new salt (the script already does this each time).
-
-“null response” or gas issues
-The script will retry using EIP-1559. You can also bump GAS_LIMIT or use a more reliable RPC.
-
-Pages shows 404 for claim links
-Wait for Pages to deploy (GitHub Action “pages-build-deployment”). Refresh claims.html.
-
-Security notes
-Never commit secrets. scripts/env.local is git-ignored.
-
-The worker processes images locally; only commitments/nullifiers go on-chain.
-
-This is a hackathon prototype; no production guarantees.
-
-Roadmap
-Real ZK proofs (Groth16/Plonk) instead of verifier stub
-
-In-browser (WASM) worker + mobile scan UX
-
-Rich campaign rules (date/merchant/amount)
-
-0G storage integration by default (artifact distribution off-chain)
+Pitch: “Zero-knowledge ile fiş/receipt → on-chain ödül; PII asla makinenizden çıkmaz.”
 
 License
 MIT
