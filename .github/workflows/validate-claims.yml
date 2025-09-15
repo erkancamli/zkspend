@@ -1,24 +1,32 @@
-name: validate-claims
+name: Validate Claims
 on:
   push:
-    branches: [ main ]
     paths:
-      - "docs/claims/**"
-      - "scripts/validate_claims.sh"
+      - 'docs/claims/**'
+      - 'scripts/validate_claims.sh'
+      - '.github/workflows/validate-claims.yml'
   workflow_dispatch:
 
 jobs:
   validate:
     runs-on: ubuntu-latest
-    env:
-      RPC_URL: https://evmrpc-testnet.0g.ai
     steps:
       - uses: actions/checkout@v4
-      - name: Install deps
-        run: sudo apt-get update && sudo apt-get install -y jq
-      - name: Setup Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+
+      # Foundry (cast) kur
+      - uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: stable
-      - name: Validate claims
-        run: bash scripts/validate_claims.sh
+          version: nightly
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Validate latest 6 claims
+        env:
+          RPC_URL: ${{ secrets.OG_RPC_URL }}
+        run: |
+          set -e
+          mkdir -p .ci-claims
+          # en yeni 6 claim dosyasını al (index.json hariç)
+          ls -1t docs/claims/*.json | grep -v index.json | head -n 6 | xargs -I{} cp {} .ci-claims/
+          CLAIMS_DIR=.ci-claims bash scripts/validate_claims.sh

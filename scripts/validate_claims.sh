@@ -15,7 +15,7 @@ fi
 : "${RPC_URL:?RPC_URL is required (export RPC_URL=...)}"
 export ETH_RPC_URL="$RPC_URL"
 
-CLAIMS_DIR="docs/claims"
+CLAIMS_DIR=${CLAIMS_DIR:-docs/claims}
 MANIFEST="$CLAIMS_DIR/index.json"
 TOPIC="0xcbcb845d94d59960a0c6e8b3a1f47ad81bb57269de43e89ff4f0fa656246f5f6"  # Claimed(address,bytes32,bytes32)
 
