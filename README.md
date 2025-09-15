@@ -1,6 +1,6 @@
 # zkSpend — Private Receipt → On-Chain Reward (0G Galileo)
 [![Validate Claims](https://github.com/erkancamli/zkspend/actions/workflows/validate-claims.yml/badge.svg)](../../actions/workflows/validate-claims.yml)
-[![Claims](https://img.shields.io/endpoint?url=https://erkancamli.github.io/zkspend/badges/claims.json)](https://erkancamli.github.io/zkspend/#claims) [![Balance](https://img.shields.io/endpoint?url=https://erkancamli.github.io/zkspend/badges/balance.json)](https://erkancamli.github.io/zkspend/)
+[![Claims](https://img.shields.io/endpoint?cacheSeconds=60img.shields.io/endpoint?url=url=https://erkancamli.github.io/zkspend/docs/badges/claims.json)](https://erkancamli.github.io/zkspend/#claims) [![Balance](https://img.shields.io/endpoint?cacheSeconds=60img.shields.io/endpoint?url=url=https://erkancamli.github.io/zkspend/docs/badges/balance.json)](https://erkancamli.github.io/zkspend/)
 
 **One-liner:** Fiş/receipt verisini **özel olarak** ZK ile işler, 0G (Galileo) üzerinde ödül talebine dönüştürür.  
 Yerel Python worker → `rc`/`nul`/`pub` üretir; **Kişisel veri (PII) cihazdan çıkmaz.**  
