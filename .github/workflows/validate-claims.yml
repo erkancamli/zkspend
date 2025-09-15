@@ -1,35 +1,24 @@
-name: Validate Claims & Rebuild Manifest
-
+name: validate-claims
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
+    paths:
+      - "docs/claims/**"
+      - "scripts/validate_claims.sh"
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   validate:
     runs-on: ubuntu-latest
+    env:
+      RPC_URL: https://evmrpc-testnet.0g.ai
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install deps (jq)
+      - uses: actions/checkout@v4
+      - name: Install deps
         run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Validate claims
-        env:
-          RPC_URL: https://evmrpc-testnet.0g.ai
-        run: |
-          bash scripts/validate_claims.sh
-
-      - name: Rebuild manifest (index.json)
-        run: |
-          bash scripts/rebuild_manifest.sh
-
-      - name: Commit changes (if any)
-        uses: EndBug/add-and-commit@v9
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
         with:
-          add: 'docs/claims/index.json'
-          message: 'ci: rebuild claims manifest'
+          version: stable
+      - name: Validate claims
+        run: bash scripts/validate_claims.sh
