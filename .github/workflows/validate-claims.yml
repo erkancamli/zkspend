@@ -11,31 +11,32 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install jq & Foundry (and expose PATH in this step)
+      - name: Install jq
         run: |
-          set -euxo pipefail
+          set -eux
           sudo apt-get update
           sudo apt-get install -y jq
-          curl -L https://foundry.paradigm.xyz | bash
-          # PATH'i BU ADIM için de ekle
-          export PATH="$HOME/.foundry/bin:$PATH"
-          # Bazı runner'larda tam yol gerekebiliyor
-          ~/.foundry/bin/foundryup -v || foundryup -v
-          ~/.foundry/bin/cast --version || cast --version
           jq --version
-          # Sonraki adımlar için kalıcı
-          echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
+
+      # Foundry'yi resmi action ile kur → forge/cast PATH'e otomatik eklenir
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Show versions
+        run: |
+          set -eux
+          forge --version
+          cast --version
 
       - name: Run validator
         env:
           RPC_URL: ${{ secrets.OG_RPC_URL }}
         run: |
-          set -euxo pipefail
-          which cast
-          cast --version
+          set -eux
           bash scripts/validate_claims.sh
