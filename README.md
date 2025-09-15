@@ -1,4 +1,5 @@
 # zkSpend — Private Receipt → On-Chain Reward (0G Galileo)
+[![Validate Claims](https://github.com/erkancamli/zkspend/actions/workflows/validate-claims.yml/badge.svg)](../../actions/workflows/validate-claims.yml)
 
 **One-liner:** Fiş/receipt verisini **özel olarak** ZK ile işler, 0G (Galileo) üzerinde ödül talebine dönüştürür.  
 Yerel Python worker → `rc`/`nul`/`pub` üretir; **Kişisel veri (PII) cihazdan çıkmaz.**  
