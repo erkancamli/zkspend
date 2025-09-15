@@ -1,6 +1,6 @@
 # zkSpend — Private Receipt → On-Chain Reward (0G Galileo)
-[![Validate Claims](https://github.com/erkancamli/zkspend/actions/workflows/validate-claims.yml/badge.svg)](../../actions/workflows/validate-claims.yml)
-[![Claims](https://img.shields.io/endpoint?cacheSeconds=60img.shields.io/endpoint?url=url=https://raw.githubusercontent.com/erkancamli/zkspend/main/docs/badges/claims.json)](https://erkancamli.github.io/zkspend/#claims) [![Balance](https://img.shields.io/endpoint?cacheSeconds=60img.shields.io/endpoint?url=url=https://raw.githubusercontent.com/erkancamli/zkspend/main/docs/badges/balance.json)](https://erkancamli.github.io/zkspend/)
+
+[![Validate Claims](https://github.com/erkancamli/zkspend/actions/workflows/validate-claims.yml/badge.svg)](https://github.com/erkancamli/zkspend/actions/workflows/validate-claims.yml) ![claims](https://img.shields.io/endpoint?cacheSeconds=60&url=https%3A%2F%2Fraw.githubusercontent.com%2Ferkancamli%2Fzkspend%2Fmain%2Fdocs%2Fbadges%2Fclaims.json) ![campaign](https://img.shields.io/endpoint?cacheSeconds=60&url=https%3A%2F%2Fraw.githubusercontent.com%2Ferkancamli%2Fzkspend%2Fmain%2Fdocs%2Fbadges%2Fbalance.json)
 
 **One-liner:** Fiş/receipt verisini **özel olarak** ZK ile işler, 0G (Galileo) üzerinde ödül talebine dönüştürür.  
 Yerel Python worker → `rc`/`nul`/`pub` üretir; **Kişisel veri (PII) cihazdan çıkmaz.**  
