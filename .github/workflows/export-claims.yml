@@ -1,0 +1,39 @@
+name: claims-export
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'docs/claims/**'
+      - 'scripts/claims_*.sh'
+  schedule:
+    - cron: '13 2 * * *'   # her gece 02:13 UTC
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Setup jq
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+      - name: Fix & Export
+        run: |
+          bash scripts/claims_fixup.sh
+          bash scripts/claims_export.sh
+      - name: Commit & Push
+        run: |
+          if ! git diff --quiet; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/claims/index.json docs/claims/claims.ndjson docs/claims/claims.csv
+            git commit -m "data(export): refresh manifest + NDJSON/CSV"
+            git push
+          else
+            echo "No changes."
+          fi

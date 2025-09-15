@@ -137,3 +137,7 @@ Live
 Dashboard: https://erkancamli.github.io/zkspend/
 
 Claims: https://erkancamli.github.io/zkspend/claims.html
+
+## Data / Exports
+- **NDJSON:** https://erkancamli.github.io/zkspend/docs/claims/claims.ndjson  
+- **CSV:** https://erkancamli.github.io/zkspend/docs/claims/claims.csv
