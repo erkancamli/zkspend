@@ -1,0 +1,129 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>zkSpend · Published Claims</title>
+<style>
+  :root{color-scheme:light dark}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;max-width:980px;margin:40px auto;padding:0 16px}
+  header{display:flex;gap:12px;align-items:center;justify-content:space-between}
+  h1{font-size:1.4rem;margin:0}
+  .muted{opacity:.7}
+  button{padding:.6rem .9rem;border:1px solid #ccc;border-radius:10px;background:transparent;cursor:pointer}
+  table{width:100%;border-collapse:collapse;margin-top:16px}
+  th,td{padding:.6rem .5rem;border-bottom:1px solid #e5e5e5;vertical-align:top}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .pill{font-size:.8rem;border:1px solid #ddd;border-radius:999px;padding:.15rem .5rem}
+  a{text-decoration:none}
+</style>
+
+<header>
+  <div>
+    <h1>zkSpend · Published Claims</h1>
+    <div class="muted">Files under <code>/docs/claims/</code> (served via GitHub Pages)</div>
+  </div>
+  <div class="row">
+    <button id="refresh">Refresh</button>
+    <a class="pill" href="../index.html">← Dashboard</a>
+    <a class="pill" href="./index.json" target="_blank">Manifest JSON</a>
+  </div>
+</header>
+
+<table id="tbl">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>TX</th>
+      <th>Commitments</th>
+      <th>Meta</th>
+      <th>Storage</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+const EXPLORER = "https://evm-testnet.0g.ai";
+const MANIFEST = "index.json"; // same folder
+
+const elTbody = document.querySelector("#tbl tbody");
+const btn = document.getElementById("refresh");
+
+const short = (hex) => {
+  if (!hex || hex.length < 12) return hex || "";
+  return hex.slice(0,10)+"…"+hex.slice(-6);
+};
+const fmtTs = (ts) => {
+  // expects like "20250914T201446Z"
+  try{
+    const yy = ts.slice(0,4), mm=ts.slice(4,6), dd=ts.slice(6,8);
+    const HH = ts.slice(9,11), MM=ts.slice(11,13), SS=ts.slice(13,15);
+    const d = new Date(Date.UTC(+yy, +mm-1, +dd, +HH, +MM, +SS));
+    return d.toISOString().replace('T',' ').replace('Z',' UTC');
+  }catch(_){ return ts; }
+};
+
+async function load(){
+  btn.disabled = true;
+  elTbody.innerHTML = `<tr><td colspan="5">Loading…</td></tr>`;
+  try{
+    const res = await fetch(MANIFEST, {cache:"no-store"});
+    if(!res.ok) throw new Error("manifest fetch failed");
+    const items = await res.json();
+
+    // newest first
+    items.sort((a,b)=>(b.ts||"").localeCompare(a.ts||""));
+
+    elTbody.innerHTML = "";
+    items.forEach((it, i) => {
+      const tx = it.tx || "";
+      const rc = it.rc || it.receiptCommitment || "";
+      const nul = it.nul || it.nullifier || "";
+      const pub = it.pub || it.publicInputHash || "";
+      const from = it.from || "";
+      const camp = it.campaign || it.contract || "";
+      const storage = it.storage || {};
+      const storageUrl = storage.url || "";
+      const file = it.file || (tx ? `${tx}.json` : "");
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${i+1}</td>
+        <td>
+          <div class="row">
+            <a href="${EXPLORER}/tx/${tx}" target="_blank"><code>${short(tx)}</code></a>
+            <a class="pill" href="./${file}" target="_blank">JSON</a>
+          </div>
+          <div class="muted">${fmtTs(it.ts||"")}</div>
+        </td>
+        <td>
+          <div>RC: <code>${short(rc)}</code></div>
+          <div>NUL: <code>${short(nul)}</code></div>
+          <div class="muted">PUB: <code>${short(pub)}</code></div>
+        </td>
+        <td>
+          <div>from: <code>${short(from)}</code></div>
+          <div>camp: <code>${short(camp)}</code></div>
+          <div class="muted">cid: <code>${(it.cid||storage.cid||"").replace(/^sha256:/,"sha256:")}</code></div>
+        </td>
+        <td>
+          ${storageUrl
+            ? `<a href="${storageUrl}" target="_blank">open</a>`
+            : `<span class="muted">—</span>`}
+        </td>
+      `;
+      elTbody.appendChild(tr);
+    });
+
+    if(items.length === 0){
+      elTbody.innerHTML = `<tr><td colspan="5">No claims yet.</td></tr>`;
+    }
+  }catch(err){
+    elTbody.innerHTML = `<tr><td colspan="5">Failed to load manifest: ${String(err)}</td></tr>`;
+  }finally{
+    btn.disabled = false;
+  }
+}
+btn.onclick = load;
+load();
+</script>
