@@ -1,1 +1,6 @@
-{"schemaVersion":1,"label":"campaign balance","message":"0.0360 ETH","color":"brightgreen"}
+{
+  "schemaVersion": 1,
+  "label": "campaign",
+  "message": "0.036 ETH",
+  "color": "blue"
+}
