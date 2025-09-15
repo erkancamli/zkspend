@@ -1,0 +1,28 @@
+name: validate-claims (cron)
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # her gün 02:00 UTC
+  workflow_dispatch:      # elde de tetiklenebilsin
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq + Foundry (cast)
+        run: |
+          set -eux
+          sudo apt-get update
+          sudo apt-get install -y jq
+          curl -L https://foundry.paradigm.xyz | bash
+          echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
+          foundryup
+
+      - name: Run validator
+        env:
+          RPC_URL: ${{ secrets.OG_RPC_URL }}
+        run: |
+          set -eux
+          bash scripts/validate_claims.sh
