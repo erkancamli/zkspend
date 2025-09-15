@@ -1,8 +1,9 @@
 name: Validate Claims
+
 on:
   push:
     paths:
-      - 'docs/claims/**'
+      - 'docs/claims/**/*.json'
       - 'scripts/validate_claims.sh'
       - '.github/workflows/validate-claims.yml'
   workflow_dispatch:
@@ -11,22 +12,18 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # Foundry (cast) kur
-      - uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
+      - name: Install jq & Foundry
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          curl -L https://foundry.paradigm.xyz | bash
+          echo "$HOME/.foundry/bin" >> $GITHUB_PATH
+          foundryup
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Validate latest 6 claims
+      - name: Run validator
         env:
           RPC_URL: ${{ secrets.OG_RPC_URL }}
-        run: |
-          set -e
-          mkdir -p .ci-claims
-          # en yeni 6 claim dosyasını al (index.json hariç)
-          ls -1t docs/claims/*.json | grep -v index.json | head -n 6 | xargs -I{} cp {} .ci-claims/
-          CLAIMS_DIR=.ci-claims bash scripts/validate_claims.sh
+        run: bash scripts/validate_claims.sh
