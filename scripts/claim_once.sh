@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+command -v cast >/dev/null || export PATH="$HOME/.foundry/bin:$PATH"
+command -v cast >/dev/null || export PATH="$HOME/.foundry/bin:$PATH"
 set -euo pipefail
 
 if [ $# -lt 1 ]; then

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+command -v cast >/dev/null || export PATH="$HOME/.foundry/bin:$PATH"
 set -euo pipefail
 
 # Bağımlılıklar
