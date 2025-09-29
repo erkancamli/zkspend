@@ -2,57 +2,43 @@ name: validate-claims (cron)
 
 on:
   schedule:
-    - cron: "17 2 * * *"   # UTC; TR saatiyle ~05:17
-  push:
-    paths:
-      - "docs/claims/**/*.json"
-      - "scripts/validate_claims.sh"
-      - ".github/workflows/validate-claims-cron.yml"
-  workflow_dispatch:
-
-permissions:
-  contents: read
+    - cron: "0 */6 * * *"        # her 6 saatte bir
+  workflow_dispatch:              # elle tetikleme
 
 concurrency:
   group: validate-claims
-  cancel-in-progress: true
+  cancel-in-progress: true        # üst üste binerse eskisini iptal et
 
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30           # 6 saat yerine max 30 dk
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install jq
-        shell: bash
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           sudo apt-get update
           sudo apt-get install -y jq
           jq --version
 
-      # Foundry'yi resmi action ile kurar; forge/cast PATH'e eklenir
       - name: Setup Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
 
       - name: Show versions
-        shell: bash
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           forge --version
           cast --version
 
-      - name: Run validator
+      - name: Run validator (wrapper)
         env:
-          OG_RPC_URL: ${{ secrets.OG_RPC_URL }}   # yoksa public RPC'ye düşer
-        shell: bash
+          RPC_URL: ${{ secrets.OG_RPC_URL }}     # yoksa wrapper public RPC'ye düşer
         run: |
-          set -euo pipefail
-          RPC_URL="${OG_RPC_URL:-https://evmrpc-testnet.0g.ai}"
-          export RPC_URL
-          export CHAIN_ID=16601
-          bash scripts/validate_claims.sh
+          set -euxo pipefail
+          bash scripts/validate_claims_wrapper.sh
